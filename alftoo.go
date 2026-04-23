@@ -20,34 +20,44 @@ type AlftooApp struct {
 	margin int32
 
 	font       *ttf.Font
+	font_name  string
 	font_fp    string
 	font_size  int
 	font_color sdl.Color
 }
 
-func (a *AlftooApp) SetDefaults() {
+func (a *AlftooApp) SetDefaults() error {
 	a.base_w = 800
 	a.base_h = 76
 	a.margin = 16
 
-	a.font_fp = "/usr/share/fonts/liberation/LiberationSans-Regular.ttf"
+	a.font_name = "Sans"
+
+	if fp, err := FontFindPath(a.font_name); err != nil {
+		return fmt.Errorf("AlftooApp.SetDefaults: could not find font\n - %w", err)
+	} else {
+		a.font_fp = fp
+	}
+
 	a.font_size = 48
 
 	a.font_color = sdl.Color{
 		R: 16, G: 255, B: 64, A: 255,
 	}
+
+	return nil
 }
 
 func (a *AlftooApp) Run() error {
 	var run_error error
 
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		run_error = fmt.Errorf("Failed to initialize SDL:\n%w", err)
+		run_error = fmt.Errorf("AlftooApp.Run: Failed to initialize SDL\n - %w", err)
 		goto QUIT_SDL
 	}
 
 	if err := ttf.Init(); err != nil {
-		run_error = fmt.Errorf("Failed to initialize TTF:\n%w", err)
+		run_error = fmt.Errorf("AlftooApp.Run: Failed to initialize TTF\n - %w", err)
 		goto QUIT_TTF
 	}
 
@@ -57,7 +67,7 @@ func (a *AlftooApp) Run() error {
 		a.base_w+2*a.margin, a.base_h+2*a.margin,
 		sdl.WINDOW_BORDERLESS,
 	); err != nil {
-		run_error = fmt.Errorf("Failed to create window:\n%w", err)
+		run_error = fmt.Errorf("AlftooApp.Run: Failed to create window\n - %w", err)
 		goto QUIT
 	} else {
 		a.window = window
@@ -66,14 +76,14 @@ func (a *AlftooApp) Run() error {
 	if renderer, err := sdl.CreateRenderer(
 		a.window, -1, sdl.RENDERER_ACCELERATED,
 	); err != nil {
-		run_error = fmt.Errorf("Failed to create renderer:\n%w", err)
+		run_error = fmt.Errorf("AlftooApp.Run: Failed to create renderer\n - %w", err)
 		goto QUIT
 	} else {
 		a.renderer = renderer
 	}
 
 	if err := a.SetFontPath(a.font_fp, a.font_size); err != nil {
-		run_error = fmt.Errorf("Failed to set font: %s\n%w", err)
+		run_error = fmt.Errorf("AlftooApp.Run: Failed to set font\n - %w", err)
 		goto QUIT
 	}
 
@@ -141,7 +151,11 @@ func (a *AlftooApp) SetFontPath(fpath string, size_px int) error {
 	}
 
 	if font, err := ttf.OpenFont(fpath, size_px*3/4); err != nil {
-		return fmt.Errorf("Failed to load font at path: %s\n%w", err)
+		return fmt.Errorf(
+			"AlftooApp.SetFontPath: Failed to load font at path:\n     \"%s\"\n - %w",
+			fpath,
+			err,
+		)
 	} else {
 		a.font = font
 	}
@@ -161,7 +175,7 @@ func (a *AlftooApp) DrawText(x, y int32, text string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("AlftooApp.DrawText:", err)
+		return fmt.Errorf("AlftooApp.DrawText\n - %w", err)
 	}
 
 	a.renderer.Copy(
@@ -296,7 +310,7 @@ func (a *AlftooApp) ResizeWindow(w, h int32) {
 
 func (a *AlftooApp) CenterWindow() error {
 	if display_bounds, err := sdl.GetDisplayBounds(0); err != nil {
-		return fmt.Errorf("AlftooApp.CenterWindow():\n%w", err)
+		return fmt.Errorf("AlftooApp.CenterWindow\n - %w", err)
 	} else {
 		var W, H int32 = a.window.GetSize()
 		a.window.SetPosition(display_bounds.W/2-W/2, display_bounds.H/2-H/2)
