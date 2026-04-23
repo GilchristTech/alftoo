@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
@@ -130,9 +131,9 @@ QUIT_SDL:
 		return run_error
 	}
 
-	if a.run_command_text != "" {
-		cmd := exec.Command("sh", "-c", a.run_command_text)
-		return cmd.Run()
+	if c := a.run_command_text; c != "" {
+		a.run_command_text = ""
+		return a.RunCommand(a.run_command_text)
 	}
 
 	return nil
@@ -158,6 +159,7 @@ func (a *AlftooApp) SetFontPath(fpath string, size_px int) error {
 		)
 	} else {
 		a.font = font
+		a.font_fp = fpath
 	}
 
 	return nil
@@ -346,8 +348,25 @@ func (a *AlftooApp) HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
 		}
 
 	case sdl.K_RETURN:
-		a.run_command_text = a.command_text
-		a.Quit()
+		c := strings.TrimSpace(a.command_text)
+
+		if strings.HasPrefix(c, ":font ") {
+			//TODO: handle error
+			if fp, err := FontFindPath(c[5:]); err != nil {
+				fmt.Println(err)
+
+			} else {
+				fmt.Println("Set font:", fp)
+				a.SetFontPath(fp, a.font_size)
+				a.Draw()
+				sdl.Delay(1000)
+				a.SetCommandText("")
+			}
+
+		} else {
+			a.run_command_text = c
+			a.Quit()
+		}
 	}
 }
 
@@ -364,4 +383,9 @@ func (a *AlftooApp) HandleCTRLKeydownEvent(ev *sdl.KeyboardEvent) {
 	case sdl.K_d:
 		a.Quit()
 	}
+}
+
+func (a *AlftooApp) RunCommand(c string) error {
+	cmd := exec.Command("sh", "-c", a.run_command_text)
+	return cmd.Run()
 }

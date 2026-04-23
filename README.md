@@ -10,6 +10,10 @@ why I named mine Alftoo. It's written in Go and SDL2.
 go build .
 ```
 
+## Commands
+
+`:font name` Sets the font in the current session
+
 ## License
 
 MIT
