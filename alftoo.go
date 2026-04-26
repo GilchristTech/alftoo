@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -25,6 +26,10 @@ type AlftooApp struct {
 	font_fp    string
 	font_size  int
 	font_color sdl.Color
+
+	background_color sdl.Color
+
+	colon_commands map[string]ColonCommand
 }
 
 func (a *AlftooApp) SetDefaults() error {
@@ -44,6 +49,10 @@ func (a *AlftooApp) SetDefaults() error {
 
 	a.font_color = sdl.Color{
 		R: 16, G: 255, B: 64, A: 255,
+	}
+
+	a.background_color = sdl.Color{
+		R: 30, G: 30, B: 30, A: 255,
 	}
 
 	return nil
@@ -132,8 +141,9 @@ QUIT_SDL:
 	}
 
 	if c := a.run_command_text; c != "" {
+		err := a.RunCommand(a.run_command_text)
 		a.run_command_text = ""
-		return a.RunCommand(a.run_command_text)
+		return err
 	}
 
 	return nil
@@ -268,7 +278,13 @@ func (a *AlftooApp) Draw() {
 		)
 		a.ResizeWindow(window_width, window_height)
 
-		a.renderer.SetDrawColor(30, 30, 30, 255)
+		a.renderer.SetDrawColor(
+			a.background_color.R,
+			a.background_color.G,
+			a.background_color.B,
+			a.background_color.A,
+		)
+
 		a.renderer.Clear()
 
 		a.renderer.Copy(
@@ -282,7 +298,13 @@ func (a *AlftooApp) Draw() {
 		)
 
 	} else {
-		a.renderer.SetDrawColor(30, 30, 30, 255)
+		a.renderer.SetDrawColor(
+			a.background_color.R,
+			a.background_color.G,
+			a.background_color.B,
+			a.background_color.A,
+		)
+
 		a.renderer.Clear()
 	}
 
@@ -348,23 +370,29 @@ func (a *AlftooApp) HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
 		}
 
 	case sdl.K_RETURN:
-		c := strings.TrimSpace(a.command_text)
+		command_name := getWord(a.command_text, 0)
+		command_args := a.command_text[len(command_name):]
 
-		if strings.HasPrefix(c, ":font ") {
-			//TODO: handle error
-			if fp, err := FontFindPath(c[5:]); err != nil {
-				fmt.Println(err)
+		if strings.HasPrefix(command_name, ":") {
+			if colon_command := colon_commands[command_name]; colon_command == nil {
+				fmt.Fprintf(
+					os.Stderr,
+					`alftoo.HandleKeyboardEvent: Colon command "%s" does not exist\n`,
+					command_name,
+				)
 
+			} else if err := colon_command.Run(a, command_name, command_args); err != nil {
+				fmt.Fprintf(
+					os.Stderr,
+					"alftoo.HandleKeyboardEvent: Error running colon command\n - %v\n",
+					err,
+				)
 			} else {
-				fmt.Println("Set font:", fp)
-				a.SetFontPath(fp, a.font_size)
-				a.Draw()
-				sdl.Delay(1000)
 				a.SetCommandText("")
 			}
 
 		} else {
-			a.run_command_text = c
+			a.run_command_text = strings.TrimSpace(a.command_text)
 			a.Quit()
 		}
 	}
