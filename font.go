@@ -109,14 +109,14 @@ func RenderText(text string) (
 	return
 }
 
-func RenderTextWrapped(text string, wrap_length_px int) (
+func RenderTextWrapped(text string, color sdl.Color, wrap_length_px int) (
 	texture *sdl.Texture,
 	surface *sdl.Surface,
 	err error,
 ) {
 	if surface, err = alf_font.RenderUTF8BlendedWrapped(
 		text,
-		alf_font_color,
+		color,
 		wrap_length_px,
 	); err != nil {
 		return

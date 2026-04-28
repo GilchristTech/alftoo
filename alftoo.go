@@ -150,9 +150,17 @@ func Draw() {
 		text_width int   = int(W) - 2*margin
 		t_texture  *sdl.Texture
 		t_surface  *sdl.Surface
+
+		command_color sdl.Color = alf_font_color
+		command_text  string    = alf_command_text
 	)
 
-	t_texture, t_surface, err = RenderTextWrapped(alf_command_text, text_width)
+	if alf_command_text == "" {
+		command_text = "Run..."
+		command_color.A = 128
+	}
+
+	t_texture, t_surface, err = RenderTextWrapped(command_text, command_color, text_width)
 
 	if t_surface != nil {
 		t_surface.Free()
