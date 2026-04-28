@@ -43,6 +43,38 @@ func Margin() int {
 	return int(alf_margin)
 }
 
+func ResizeWindow(w, h int32) {
+	var (
+		original_w, original_h int32 = alf_window.GetSize()
+	)
+
+	if w == -1 {
+		w = original_w
+	}
+
+	if h == -1 {
+		h = original_h
+	}
+
+	if w == original_w && h == original_h {
+		return
+	} else {
+		alf_window.SetSize(w, h)
+		CenterWindow()
+	}
+}
+
+func CenterWindow() error {
+	if display_bounds, err := sdl.GetDisplayBounds(0); err != nil {
+		return fmt.Errorf("alftoo.CenterWindow\n - %w", err)
+
+	} else {
+		var W, H int32 = alf_window.GetSize()
+		alf_window.SetPosition(display_bounds.W/2-W/2, display_bounds.H/2-H/2)
+		return nil
+	}
+}
+
 type CommandWindowGeometry int
 
 func (bw *CommandWindowGeometry) Run(name, args string) error {

@@ -25,23 +25,25 @@ func ClearColonCommands() {
 }
 
 func AddColonCommand(name string, cc ColonCommand) {
+	var err_h string = "alftoo.AddColonCommand"
+
 	if colon_commands == nil {
 		ClearColonCommands()
 	}
 
 	if cc == nil {
-		panic("alftoo.AddColonCommand: command is nil")
+		panic(err_h + ": command is nil")
 
 	} else if !strings.HasPrefix(name, ":") {
 		panic(fmt.Sprintf(
-			`alftoo.AddColonCommand: command name "%s" does not start with a colon`,
-			name,
+			`%s: command name "%s" does not start with a colon`,
+			err_h, name,
 		))
 
 	} else if _, exists := colon_commands[name]; exists {
 		panic(fmt.Sprintf(
-			`alftoo.AddColonCommand: command with name "%s" already exists`,
-			name,
+			`%s: command with name "%s" already exists`,
+			err_h, name,
 		))
 
 	} else {

@@ -142,92 +142,6 @@ func Quit() {
 	})
 }
 
-func SetFontPath(fpath string, size_px int) error {
-	if alf_font != nil {
-		alf_font.Close()
-		alf_font = nil
-	}
-
-	if font, err := ttf.OpenFont(fpath, size_px*3/4); err != nil {
-		return fmt.Errorf(
-			"alftoo.SetFontPath: Failed to load font at path:\n     \"%s\"\n - %w",
-			fpath,
-			err,
-		)
-	} else {
-		alf_font = font
-		alf_font_fp = fpath
-	}
-
-	return nil
-}
-
-func DrawText(x, y int32, text string) error {
-	texture, surface, err := RenderText(text)
-
-	if texture != nil {
-		defer texture.Destroy()
-	}
-
-	if surface != nil {
-		defer surface.Free()
-	}
-
-	if err != nil {
-		return fmt.Errorf("alftoo.DrawText\n - %w", err)
-	}
-
-	alf_renderer.Copy(
-		texture, nil,
-		&sdl.Rect{
-			X: x, Y: y,
-			W: surface.W,
-			H: surface.H,
-		},
-	)
-
-	return nil
-}
-
-func RenderText(text string) (
-	texture *sdl.Texture,
-	surface *sdl.Surface,
-	err error,
-) {
-	if surface, err = alf_font.RenderUTF8Blended(
-		text,
-		alf_font_color,
-	); err != nil {
-		return
-	}
-
-	if texture, err = alf_renderer.CreateTextureFromSurface(surface); err != nil {
-		return
-	}
-
-	return
-}
-
-func RenderTextWrapped(text string, wrap_length_px int) (
-	texture *sdl.Texture,
-	surface *sdl.Surface,
-	err error,
-) {
-	if surface, err = alf_font.RenderUTF8BlendedWrapped(
-		text,
-		alf_font_color,
-		wrap_length_px,
-	); err != nil {
-		return
-	}
-
-	if texture, err = alf_renderer.CreateTextureFromSurface(surface); err != nil {
-		return
-	}
-
-	return
-}
-
 func Draw() {
 	var (
 		err        error
@@ -296,38 +210,6 @@ func Draw() {
 	}
 
 	alf_renderer.Present()
-}
-
-func ResizeWindow(w, h int32) {
-	var (
-		original_w, original_h int32 = alf_window.GetSize()
-	)
-
-	if w == -1 {
-		w = original_w
-	}
-
-	if h == -1 {
-		h = original_h
-	}
-
-	if w == original_w && h == original_h {
-		return
-	} else {
-		alf_window.SetSize(w, h)
-		CenterWindow()
-	}
-}
-
-func CenterWindow() error {
-	if display_bounds, err := sdl.GetDisplayBounds(0); err != nil {
-		return fmt.Errorf("alftoo.CenterWindow\n - %w", err)
-
-	} else {
-		var W, H int32 = alf_window.GetSize()
-		alf_window.SetPosition(display_bounds.W/2-W/2, display_bounds.H/2-H/2)
-		return nil
-	}
 }
 
 func HandleInputString(input string) {
