@@ -14,7 +14,7 @@ type ColonCommand interface {
 	// string. This design allows each command to take up only the
 	// amount of memory they require.
 
-	Run(a *AlftooApp, name, args string) error
+	Run(name, args string) error
 }
 
 var colon_commands map[string]ColonCommand

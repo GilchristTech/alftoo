@@ -9,16 +9,15 @@ import (
 func main() {
 	var (
 		err       error
-		app       AlftooApp
 		exit_code int = 0
 	)
 
-	if err := app.SetDefaults(); err != nil {
+	if err := SetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "Alftoo Error: could not set defaults\n - %s\n", err)
 		os.Exit(1)
 	}
 
-	if err = app.Run(); err != nil {
+	if err = Run(); err != nil {
 		if exit_err, ok := err.(*exec.ExitError); ok {
 			exit_code = exit_err.ExitCode()
 		} else {

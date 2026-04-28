@@ -10,94 +10,92 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 )
 
-type AlftooApp struct {
-	window   *sdl.Window
-	renderer *sdl.Renderer
+var (
+	alf_window   *sdl.Window
+	alf_renderer *sdl.Renderer
 
-	command_text     string // The editing buffer of the command
-	run_command_text string // If set, run this command after quitting SDL
+	alf_command_text     string // The editing buffer of the command
+	alf_run_command_text string // If set, run this command after quitting SDL
 
-	base_w int32
-	base_h int32
-	margin int32
+	alf_base_w int32
+	alf_base_h int32
+	alf_margin int32
 
-	font       *ttf.Font
-	font_name  string
-	font_fp    string
-	font_size  int
-	font_color sdl.Color
+	alf_font       *ttf.Font
+	alf_font_name  string
+	alf_font_fp    string
+	alf_font_size  int
+	alf_font_color sdl.Color
 
-	background_color sdl.Color
+	alf_background_color sdl.Color
+)
 
-	colon_commands map[string]ColonCommand
-}
+func SetDefaults() error {
+	alf_base_w = 800
+	alf_base_h = 76
+	alf_margin = 16
 
-func (a *AlftooApp) SetDefaults() error {
-	a.base_w = 800
-	a.base_h = 76
-	a.margin = 16
+	alf_font_name = "Sans"
 
-	a.font_name = "Sans"
-
-	if fp, err := FontFindPath(a.font_name); err != nil {
-		return fmt.Errorf("AlftooApp.SetDefaults: could not find font\n - %w", err)
+	if fp, err := FontFindPath(alf_font_name); err != nil {
+		return fmt.Errorf("alftoo.SetDefaults: could not find font\n - %w", err)
 	} else {
-		a.font_fp = fp
+		alf_font_fp = fp
 	}
 
-	a.font_size = 48
+	alf_font_size = 48
 
-	a.font_color = sdl.Color{
+	alf_font_color = sdl.Color{
 		R: 16, G: 255, B: 64, A: 255,
 	}
 
-	a.background_color = sdl.Color{
+	alf_background_color = sdl.Color{
 		R: 30, G: 30, B: 30, A: 255,
 	}
 
 	return nil
 }
 
-func (a *AlftooApp) Run() error {
+func Run() error {
 	var run_error error
 
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		run_error = fmt.Errorf("AlftooApp.Run: Failed to initialize SDL\n - %w", err)
+		run_error = fmt.Errorf("alftoo.Run: Failed to initialize SDL\n - %w", err)
 		goto QUIT_SDL
 	}
 
 	if err := ttf.Init(); err != nil {
-		run_error = fmt.Errorf("AlftooApp.Run: Failed to initialize TTF\n - %w", err)
+		run_error = fmt.Errorf("alftoo.Run: Failed to initialize TTF\n - %w", err)
 		goto QUIT_TTF
 	}
 
 	if window, err := sdl.CreateWindow(
 		"alftoo",
 		sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
-		a.base_w+2*a.margin, a.base_h+2*a.margin,
+		alf_base_w+2*alf_margin, alf_base_h+2*alf_margin,
 		sdl.WINDOW_BORDERLESS,
 	); err != nil {
-		run_error = fmt.Errorf("AlftooApp.Run: Failed to create window\n - %w", err)
+		run_error = fmt.Errorf("alftoo.Run: Failed to create window\n - %w", err)
 		goto QUIT
 	} else {
-		a.window = window
+		alf_window = window
 	}
 
 	if renderer, err := sdl.CreateRenderer(
-		a.window, -1, sdl.RENDERER_ACCELERATED,
+		alf_window, -1, sdl.RENDERER_ACCELERATED,
 	); err != nil {
-		run_error = fmt.Errorf("AlftooApp.Run: Failed to create renderer\n - %w", err)
+		run_error = fmt.Errorf("alftoo.Run: Failed to create renderer\n - %w", err)
 		goto QUIT
 	} else {
-		a.renderer = renderer
+		alf_renderer = renderer
 	}
 
-	if err := a.SetFontPath(a.font_fp, a.font_size); err != nil {
-		run_error = fmt.Errorf("AlftooApp.Run: Failed to set font\n - %w", err)
+	if err := SetFontPath(alf_font_fp, alf_font_size); err != nil {
+		run_error = fmt.Errorf("alftoo.Run: Failed to set font\n - %w", err)
 		goto QUIT
 	}
 
-	a.Draw()
+	Draw()
 	sdl.StartTextInput()
 
 EVENT_LOOP:
@@ -108,10 +106,10 @@ EVENT_LOOP:
 				break EVENT_LOOP
 
 			case *sdl.TextInputEvent:
-				a.HandleInputString(ev.GetText())
+				HandleInputString(ev.GetText())
 
 			case *sdl.KeyboardEvent:
-				a.HandleKeyboardEvent(ev)
+				HandleKeyboardEvent(ev)
 			}
 		}
 	}
@@ -119,17 +117,17 @@ EVENT_LOOP:
 QUIT:
 	sdl.StopTextInput()
 
-	if a.font != nil {
-		a.font.Close()
-		a.font = nil
+	if alf_font != nil {
+		alf_font.Close()
+		alf_font = nil
 	}
 
-	if a.window != nil {
-		a.window.Destroy()
-		a.window = nil
+	if alf_window != nil {
+		alf_window.Destroy()
+		alf_window = nil
 	}
 
-	a.renderer = nil
+	alf_renderer = nil
 
 QUIT_TTF:
 	ttf.Quit()
@@ -140,43 +138,43 @@ QUIT_SDL:
 		return run_error
 	}
 
-	if c := a.run_command_text; c != "" {
-		err := a.RunCommand(a.run_command_text)
-		a.run_command_text = ""
+	if c := alf_run_command_text; c != "" {
+		err := RunCommand(alf_run_command_text)
+		alf_run_command_text = ""
 		return err
 	}
 
 	return nil
 }
 
-func (a *AlftooApp) Quit() {
+func Quit() {
 	sdl.PushEvent(&sdl.QuitEvent{
 		Type: sdl.QUIT,
 	})
 }
 
-func (a *AlftooApp) SetFontPath(fpath string, size_px int) error {
-	if a.font != nil {
-		a.font.Close()
-		a.font = nil
+func SetFontPath(fpath string, size_px int) error {
+	if alf_font != nil {
+		alf_font.Close()
+		alf_font = nil
 	}
 
 	if font, err := ttf.OpenFont(fpath, size_px*3/4); err != nil {
 		return fmt.Errorf(
-			"AlftooApp.SetFontPath: Failed to load font at path:\n     \"%s\"\n - %w",
+			"alftoo.SetFontPath: Failed to load font at path:\n     \"%s\"\n - %w",
 			fpath,
 			err,
 		)
 	} else {
-		a.font = font
-		a.font_fp = fpath
+		alf_font = font
+		alf_font_fp = fpath
 	}
 
 	return nil
 }
 
-func (a *AlftooApp) DrawText(x, y int32, text string) error {
-	texture, surface, err := a.RenderText(text)
+func DrawText(x, y int32, text string) error {
+	texture, surface, err := RenderText(text)
 
 	if texture != nil {
 		defer texture.Destroy()
@@ -187,10 +185,10 @@ func (a *AlftooApp) DrawText(x, y int32, text string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("AlftooApp.DrawText\n - %w", err)
+		return fmt.Errorf("alftoo.DrawText\n - %w", err)
 	}
 
-	a.renderer.Copy(
+	alf_renderer.Copy(
 		texture, nil,
 		&sdl.Rect{
 			X: x, Y: y,
@@ -202,56 +200,56 @@ func (a *AlftooApp) DrawText(x, y int32, text string) error {
 	return nil
 }
 
-func (a *AlftooApp) RenderText(text string) (
+func RenderText(text string) (
 	texture *sdl.Texture,
 	surface *sdl.Surface,
 	err error,
 ) {
-	if surface, err = a.font.RenderUTF8Blended(
-		a.command_text,
-		a.font_color,
+	if surface, err = alf_font.RenderUTF8Blended(
+		text,
+		alf_font_color,
 	); err != nil {
 		return
 	}
 
-	if texture, err = a.renderer.CreateTextureFromSurface(surface); err != nil {
+	if texture, err = alf_renderer.CreateTextureFromSurface(surface); err != nil {
 		return
 	}
 
 	return
 }
 
-func (a *AlftooApp) RenderTextWrapped(text string, wrap_length_px int) (
+func RenderTextWrapped(text string, wrap_length_px int) (
 	texture *sdl.Texture,
 	surface *sdl.Surface,
 	err error,
 ) {
-	if surface, err = a.font.RenderUTF8BlendedWrapped(
-		a.command_text,
-		a.font_color,
+	if surface, err = alf_font.RenderUTF8BlendedWrapped(
+		text,
+		alf_font_color,
 		wrap_length_px,
 	); err != nil {
 		return
 	}
 
-	if texture, err = a.renderer.CreateTextureFromSurface(surface); err != nil {
+	if texture, err = alf_renderer.CreateTextureFromSurface(surface); err != nil {
 		return
 	}
 
 	return
 }
 
-func (a *AlftooApp) Draw() {
+func Draw() {
 	var (
 		err        error
-		W, _       int32 = a.window.GetSize()
-		margin     int   = int(a.margin)
+		W, _       int32 = alf_window.GetSize()
+		margin     int   = int(alf_margin)
 		text_width int   = int(W) - 2*margin
 		t_texture  *sdl.Texture
 		t_surface  *sdl.Surface
 	)
 
-	t_texture, t_surface, err = a.RenderTextWrapped(a.command_text, text_width)
+	t_texture, t_surface, err = RenderTextWrapped(alf_command_text, text_width)
 
 	if t_surface != nil {
 		t_surface.Free()
@@ -262,35 +260,35 @@ func (a *AlftooApp) Draw() {
 	}
 
 	if err == nil {
-		width := a.base_w
-		if t_surface.W > a.base_w {
+		width := alf_base_w
+		if t_surface.W > alf_base_w {
 			width = t_surface.W
 		}
 
-		height := a.base_h
-		if t_surface.H > a.base_h {
+		height := alf_base_h
+		if t_surface.H > alf_base_h {
 			height = t_surface.H
 		}
 
 		var (
-			window_width  = width + int32(2*margin)
-			window_height = height + int32(2*margin)
+			window_width  = width + int32(2*alf_margin)
+			window_height = height + int32(2*alf_margin)
 		)
-		a.ResizeWindow(window_width, window_height)
+		ResizeWindow(window_width, window_height)
 
-		a.renderer.SetDrawColor(
-			a.background_color.R,
-			a.background_color.G,
-			a.background_color.B,
-			a.background_color.A,
+		alf_renderer.SetDrawColor(
+			alf_background_color.R,
+			alf_background_color.G,
+			alf_background_color.B,
+			alf_background_color.A,
 		)
 
-		a.renderer.Clear()
+		alf_renderer.Clear()
 
-		a.renderer.Copy(
+		alf_renderer.Copy(
 			t_texture, nil,
 			&sdl.Rect{
-				X: int32(margin),
+				X: int32(alf_margin),
 				Y: window_height/2 - t_surface.H/2,
 				W: t_surface.W,
 				H: t_surface.H,
@@ -298,22 +296,22 @@ func (a *AlftooApp) Draw() {
 		)
 
 	} else {
-		a.renderer.SetDrawColor(
-			a.background_color.R,
-			a.background_color.G,
-			a.background_color.B,
-			a.background_color.A,
+		alf_renderer.SetDrawColor(
+			alf_background_color.R,
+			alf_background_color.G,
+			alf_background_color.B,
+			alf_background_color.A,
 		)
 
-		a.renderer.Clear()
+		alf_renderer.Clear()
 	}
 
-	a.renderer.Present()
+	alf_renderer.Present()
 }
 
-func (a *AlftooApp) ResizeWindow(w, h int32) {
+func ResizeWindow(w, h int32) {
 	var (
-		original_w, original_h int32 = a.window.GetSize()
+		original_w, original_h int32 = alf_window.GetSize()
 	)
 
 	if w == -1 {
@@ -327,51 +325,56 @@ func (a *AlftooApp) ResizeWindow(w, h int32) {
 	if w == original_w && h == original_h {
 		return
 	} else {
-		a.window.SetSize(w, h)
-		a.CenterWindow()
+		alf_window.SetSize(w, h)
+		CenterWindow()
 	}
 }
 
-func (a *AlftooApp) CenterWindow() error {
+func CenterWindow() error {
 	if display_bounds, err := sdl.GetDisplayBounds(0); err != nil {
-		return fmt.Errorf("AlftooApp.CenterWindow\n - %w", err)
+		return fmt.Errorf("alftoo.CenterWindow\n - %w", err)
+
 	} else {
-		var W, H int32 = a.window.GetSize()
-		a.window.SetPosition(display_bounds.W/2-W/2, display_bounds.H/2-H/2)
+		var W, H int32 = alf_window.GetSize()
+		alf_window.SetPosition(display_bounds.W/2-W/2, display_bounds.H/2-H/2)
 		return nil
 	}
 }
 
-func (a *AlftooApp) HandleInputString(input string) {
-	a.SetCommandText(a.command_text + input)
+func HandleInputString(input string) {
+	SetCommandText(alf_command_text + input)
 }
 
-func (a *AlftooApp) SetCommandText(t string) {
-	a.command_text = t
-	a.Draw()
+func CommandText() string {
+	return alf_command_text
 }
 
-func (a *AlftooApp) HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
+func SetCommandText(t string) {
+	alf_command_text = t
+	Draw()
+}
+
+func HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
 	if ev.Type != sdl.KEYDOWN {
 		return
 	}
 
 	if ev.Keysym.Mod&sdl.KMOD_CTRL != 0 {
-		a.HandleCTRLKeydownEvent(ev)
+		HandleCTRLKeydownEvent(ev)
 	}
 
 	switch ev.Keysym.Sym {
 	case sdl.K_ESCAPE:
-		a.Quit()
+		Quit()
 
 	case sdl.K_BACKSPACE:
-		if l := len(a.command_text); l > 0 {
-			a.SetCommandText(a.command_text[:l-1])
+		if l := len(alf_command_text); l > 0 {
+			SetCommandText(alf_command_text[:l-1])
 		}
 
 	case sdl.K_RETURN:
-		command_name := getWord(a.command_text, 0)
-		command_args := a.command_text[len(command_name):]
+		command_name := getWord(alf_command_text, 0)
+		command_args := alf_command_text[len(command_name):]
 
 		if strings.HasPrefix(command_name, ":") {
 			if colon_command := colon_commands[command_name]; colon_command == nil {
@@ -381,39 +384,39 @@ func (a *AlftooApp) HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
 					command_name,
 				)
 
-			} else if err := colon_command.Run(a, command_name, command_args); err != nil {
+			} else if err := colon_command.Run(command_name, command_args); err != nil {
 				fmt.Fprintf(
 					os.Stderr,
 					"alftoo.HandleKeyboardEvent: Error running colon command\n - %v\n",
 					err,
 				)
 			} else {
-				a.SetCommandText("")
+				SetCommandText("")
 			}
 
 		} else {
-			a.run_command_text = strings.TrimSpace(a.command_text)
-			a.Quit()
+			alf_run_command_text = strings.TrimSpace(alf_command_text)
+			Quit()
 		}
 	}
 }
 
-func (a *AlftooApp) HandleCTRLKeydownEvent(ev *sdl.KeyboardEvent) {
+func HandleCTRLKeydownEvent(ev *sdl.KeyboardEvent) {
 	switch ev.Keysym.Sym {
 	case sdl.K_u:
-		a.SetCommandText("")
+		SetCommandText("")
 
 	case sdl.K_v:
 		if text, err := sdl.GetClipboardText(); err == nil {
-			a.HandleInputString(text)
+			HandleInputString(text)
 		}
 
 	case sdl.K_d:
-		a.Quit()
+		Quit()
 	}
 }
 
-func (a *AlftooApp) RunCommand(c string) error {
-	cmd := exec.Command("sh", "-c", a.run_command_text)
+func RunCommand(c string) error {
+	cmd := exec.Command("sh", "-c", alf_run_command_text)
 	return cmd.Run()
 }
