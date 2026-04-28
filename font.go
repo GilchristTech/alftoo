@@ -43,10 +43,11 @@ FAIL:
 }
 
 func (fc *FontCommand) Run(name, args string) error {
+	var err_h string = "alftoo.CommandFont.Run"
 	args = strings.TrimSpace(args)
 
 	if fp, err := FontFindPath(args); err != nil {
-		return err
+		return fmt.Errorf("%s: error finding font path\n - %w", err_h, err)
 
 	} else {
 		*fc = FontCommand(fp)
@@ -56,7 +57,7 @@ func (fc *FontCommand) Run(name, args string) error {
 		}
 
 		if err := SetFontPath(fp, alf_font_size); err != nil {
-			return fmt.Errorf("FontCommand.Run: error setting font\n - %w", err)
+			return fmt.Errorf("%s: error setting font\n - %w", err_h, err)
 		}
 
 		if alf_window != nil {

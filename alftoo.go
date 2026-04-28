@@ -11,15 +11,8 @@ import (
 )
 
 var (
-	alf_window   *sdl.Window
-	alf_renderer *sdl.Renderer
-
 	alf_command_text     string // The editing buffer of the command
 	alf_run_command_text string // If set, run this command after quitting SDL
-
-	alf_base_w int32
-	alf_base_h int32
-	alf_margin int32
 
 	alf_font       *ttf.Font
 	alf_font_name  string
@@ -31,10 +24,6 @@ var (
 )
 
 func SetDefaults() error {
-	alf_base_w = 800
-	alf_base_h = 76
-	alf_margin = 16
-
 	alf_font_name = "Sans"
 
 	if fp, err := FontFindPath(alf_font_name); err != nil {
@@ -374,7 +363,7 @@ func HandleKeyboardEvent(ev *sdl.KeyboardEvent) {
 
 	case sdl.K_RETURN:
 		command_name := getWord(alf_command_text, 0)
-		command_args := alf_command_text[len(command_name):]
+		command_args := strings.TrimSpace(alf_command_text[len(command_name):])
 
 		if strings.HasPrefix(command_name, ":") {
 			if colon_command := colon_commands[command_name]; colon_command == nil {
