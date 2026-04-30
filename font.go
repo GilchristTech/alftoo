@@ -64,7 +64,7 @@ FAIL:
 }
 
 func (fc *CommandFont) Run(name, args string) error {
-	var err_h string = "alftoo.CommandFont.Run"
+	var err_h string = "alftoo.CommandFont.Run" + name
 	args = strings.TrimSpace(args)
 
 	if fp, err := FontFindPath(args); err != nil {

@@ -17,10 +17,9 @@ var (
 )
 
 func init() {
-	var cmd CommandWindowGeometry
-	AddColonCommand(":base-w", &cmd)
-	AddColonCommand(":base-h", &cmd)
-	AddColonCommand(":margin", &cmd)
+	AddColonCommand(":base-w", (*CommandWindowGeometry)(&alf_base_w))
+	AddColonCommand(":base-h", (*CommandWindowGeometry)(&alf_base_h))
+	AddColonCommand(":margin", (*CommandWindowGeometry)(&alf_margin))
 }
 
 func Window() *sdl.Window {
@@ -75,7 +74,7 @@ func CenterWindow() error {
 	}
 }
 
-type CommandWindowGeometry int
+type CommandWindowGeometry int32
 
 func (bw *CommandWindowGeometry) Run(name, args string) error {
 	var (
@@ -84,25 +83,16 @@ func (bw *CommandWindowGeometry) Run(name, args string) error {
 	)
 
 	if args == "" {
-		return fmt.Errorf(`%s: no value specified`)
+		return fmt.Errorf(`%s: no value specified`, err_h)
 
 	} else if value_uint64, err := strconv.ParseUint(args, 10, 32); err != nil {
-		return fmt.Errorf(`%s: argument is not a positive integer`)
+		return fmt.Errorf(`%s: argument is not a positive integer`, err_h)
 
 	} else {
 		value = int32(value_uint64)
 	}
 
-	switch name {
-	case ":base-w":
-		alf_base_w = value
-	case ":base-h":
-		alf_base_h = value
-	case ":margin":
-		alf_margin = value
-	default:
-		return fmt.Errorf(`%s: command not recognized: "%s"`, err_h, name)
-	}
+	*bw = CommandWindowGeometry(value)
 
 	Draw()
 
